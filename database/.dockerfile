@@ -1,0 +1,7 @@
+FROM postgres:16
+
+ENV POSTGRES_DB=${pgSQL_add_db}
+ENV POSTGRES_USER=${pgSQL_add_user}
+ENV POSTGRES_PASSWORD=${pgSQL_app_password}
+
+EXPOSE 5432
