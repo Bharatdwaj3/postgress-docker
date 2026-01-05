@@ -28,18 +28,38 @@ services:
     env_file: 
       - ./backend/.env
     ports: 
-      - 5012:5012
+      - 5013:5013
     networks:
       - backend_net
+    depends_on:
+      - db
+  api-services:
+    build: 
+      context: ./api-services
+      dockerfile: .dockerfile
+    container_name: api-services_ctr
+    restart: unless-stopped
+    
+    env_file: 
+      - ./api-services/.env
+    ports: 
+      - 5014:5014
+    networks:
+      - api-services_net
+    depends_on:
+      - backend
+      - db
 
 networks:
   database_net:
     driver: bridge
   backend_net:
     driver: bridge
+  service_net:
+    driver: bridge
 
 
 volumes: 
   postgres_data:
   backend:
-  services:
+  api-services:
