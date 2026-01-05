@@ -1,0 +1,45 @@
+name: books-library
+version : "3.9"
+
+services:
+  db:
+    build: 
+      context: ./database
+      dockerfile: .dockerfile
+    container_name: postgres_ctr
+    restart: unless-stopped
+    
+    env_file: 
+      - ./database/.env
+    ports: 
+      - 5012:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - database_net
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: .dockerfile
+    container_name: backend_ctr
+    restart: unless-stopped
+    
+    env_file: 
+      - ./backend/.env
+    ports: 
+      - 5012:5012
+    networks:
+      - backend_net
+
+networks:
+  database_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
+
+
+volumes: 
+  postgres_data:
+  backend:
+  services:
