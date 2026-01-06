@@ -16,7 +16,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - database_net
+      - app_network
 
   backend:
     build: 
@@ -30,7 +30,7 @@ services:
     ports: 
       - 5013:5013
     networks:
-      - backend_net
+      - app_network
     depends_on:
       - db
   api-services:
@@ -45,21 +45,15 @@ services:
     ports: 
       - 5014:5014
     networks:
-      - api-services_net
+      - app_network
     depends_on:
       - backend
       - db
 
 networks:
-  database_net:
-    driver: bridge
-  backend_net:
-    driver: bridge
-  service_net:
+  app_network:
     driver: bridge
 
 
 volumes: 
   postgres_data:
-  backend:
-  api-services:
