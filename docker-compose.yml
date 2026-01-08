@@ -1,5 +1,4 @@
 name: books-library
-version : "3.9"
 
 services:
   db:
@@ -33,15 +32,35 @@ services:
       - app_network
     depends_on:
       - db
-  api-services:
+ 
+
+  firebase:
     build: 
-      context: ./api-services
+      context: ./firebase
       dockerfile: .dockerfile
-    container_name: api-services_ctr
+    container_name: firebase_ctr
     restart: unless-stopped
     
     env_file: 
-      - ./api-services/.env
+      - ./firebase/.env
+    ports: 
+      - 4000:4000 #UI
+      - 9099:9099 #Auth
+      - 9199:9199 #Storage
+    volumes:
+      - firebase_data:/app/firebase-data
+    networks:
+      - app_network
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: .dockerfile
+    container_name: frontend_ctr
+    restart: unless-stopped
+    
+    env_file: 
+      - ./frontend/.env
     ports: 
       - 5014:5014
     networks:
@@ -49,6 +68,7 @@ services:
     depends_on:
       - backend
       - db
+      - firebase
 
 networks:
   app_network:
@@ -57,3 +77,4 @@ networks:
 
 volumes: 
   postgres_data:
+  firebase_data:

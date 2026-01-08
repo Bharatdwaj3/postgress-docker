@@ -1,5 +1,12 @@
 import 'dotenv/config';
 
+const DB_USER = process.env.DB_USER || 'some_pgSql_db_user';
+const DB_HOST =  process.env.DB_HOST || 'some_pgSql_db_host'
+const DB_PORT = process.env.DB_PORT || 'some_pgSql_db_port';
+const DB_NAME =  process.env.DB_NAME || 'some_pgSql_db_name';
+const DB_PASSWORD = process.env.DB_PASSWORD || 'some_pgSql_db_password';
+
+
 const SESSION_SECRECT = process.env.SESSION_SECRECT || 'defaultSessionsecret';
 
 const JWT_REF_SECRECT = process.env.JWT_REF_SECRECT || 'defaultjwtsecret';
@@ -27,6 +34,7 @@ const SMTP_USER=process.env.SMTP_USER || 'some smtp user'
 const SMTP_PASS=process.env.SMTP_PASS  || 'some smtp secret'
 
 export {
+    DB_USER, DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT,
     SESSION_SECRECT, 
     JWT_ACC_EXPIRES_IN, JWT_ACC_SECRECT, JWT_REF_EXPIRES_IN, JWT_REF_SECRECT,
     GOOGLE_CALLBACK_URI, GOOGLE_CLIENT_ID,  GOOGLE_CLIENT_SECRET,

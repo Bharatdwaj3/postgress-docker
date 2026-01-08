@@ -1,8 +1,11 @@
-FROM postgres:16
+FROM node:16
 
+WORKDIR /usr/src/app
 
-ENV POSTGRES_DB=library
-ENV POSTGRES_USER=admin
-ENV POSTGRES_PASSWORD=Clomen78
+COPY package*.json ./
+RUN npm install
 
-EXPOSE 5432
+COPY . .
+
+EXPOSE 1337
+CMD ["npm", "run", "dev"]

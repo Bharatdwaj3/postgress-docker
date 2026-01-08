@@ -6,7 +6,7 @@ import {
   deleteUserService 
 } from '../models/userModel.js';
 
-const handleResponse = (res, status, message, data = null) => {
+const handleResponse = (res: string, status: string, message: string, data = null ) => {
   res.status(status).json({ status, message, data });
 };
 

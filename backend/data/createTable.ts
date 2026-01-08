@@ -1,4 +1,4 @@
-import pool from '../config/db.js';
+import pool from '../config/db.config';
 
 const createUsersTable = async () => {
   const queryText = `
