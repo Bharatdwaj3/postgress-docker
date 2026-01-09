@@ -2,20 +2,25 @@ name: books-library
 
 services:
   db:
-    build: 
-      context: ./database
-      dockerfile: .dockerfile
+    image: postrgres:15-alpine 
     container_name: postgres_ctr
     restart: unless-stopped
     
-    env_file: 
-      - ./database/.env
+    environment:
+      POSTGRES_PASSWORD: Clomen78
+      POSTGRES_USER: user123
+      POSTGRES_DB: library
     ports: 
       - 5012:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user123 -d library"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: 
@@ -31,7 +36,8 @@ services:
     networks:
       - app_network
     depends_on:
-      - db
+      db: 
+        condition: service_healthy
  
 
   firebase:
