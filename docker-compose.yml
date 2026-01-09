@@ -2,7 +2,7 @@ name: books-library
 
 services:
   db:
-    image: postrgres:15-alpine 
+    image: postgres:15-alpine
     container_name: postgres_ctr
     restart: unless-stopped
     
@@ -13,7 +13,7 @@ services:
     ports: 
       - 5012:5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     networks:
       - app_network
     healthcheck:
@@ -43,9 +43,11 @@ services:
   firebase:
     build: 
       context: ./firebase
-      dockerfile: .dockerfile
+      dockerfile: Dockerfile
     container_name: firebase_ctr
     restart: unless-stopped
+    environment:
+      - FIREBASE_EMULATORS_UI_HOST=0.0.0.0  
     
     env_file: 
       - ./firebase/.env
