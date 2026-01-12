@@ -17,15 +17,16 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user123 -d library"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s  
 
   backend:
     build: 
       context: ./backend
-      dockerfile: .dockerfile
+      dockerfile: Dockerfile
     container_name: backend_ctr
     restart: unless-stopped
     
