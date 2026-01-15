@@ -12,3 +12,78 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+//
+model Writer {
+  id    Int     @id @default(autoincrement())
+  name  String
+  orign String?
+  books book[]
+}
+
+model Publisher {
+  id     Int     @id @default(autoincrement())
+  name   String
+  origin String?
+  books  book[]
+}
+
+enum Genre {
+  FANTASY
+  SCIENCE
+}
+
+enum Subject {
+  Geography
+  Social_Studies
+  Computer_Science
+  Literature
+  History
+}
+
+//
+
+model book {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  publisher Publisher[]
+  writer    Writer[]
+  genre     Genre[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model faculty {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  Fname     String
+  Lname     String
+  age       Int
+  gender    String
+  Expertise Subject
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model student {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  Fname    String
+  Lname    String
+  age      Int
+  gender   String
+  Subjects Subject
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
