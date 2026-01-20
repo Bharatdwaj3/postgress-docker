@@ -1,5 +1,4 @@
 import morgan, { token } from 'morgan';
-import type { RequestHandler } from "express";
 
 
 // 🌈 Colorize HTTP methods
