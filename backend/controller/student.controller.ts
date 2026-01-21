@@ -1,4 +1,4 @@
-import prisma from "../config/prisma";
+import prisma from "../prisma.config.js";
 import type {studentCreateInput, studentModel, studentUpdateInput } from "../generated/prisma/models/student" 
 import type { Response, Request } from 'express';
 

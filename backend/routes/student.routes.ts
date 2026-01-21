@@ -1,41 +1,45 @@
-const express=require('express');
-const upload=require('../services/multer.service');
-const router=express.Router();
+import {Router} from 'express';
+const router=Router();
 
-const {
+import {
   listStudent,
   getStudent,
   registerStudent,
   updateStudent,
   removeStudent,
-} =require('../controllers/customer.controller');
+} from '../controller/student.controller.js';
 
-const checkPermission = require('../middleware/permission.middleware');
-const roleMiddleware = require('../middleware/role.middleware');
-const authUser=require('../middleware/auth.middleware');
+import checkPermission from '../middleware/permission.middleware.js';
+import {roleMiddleware} from '../middleware/role.middleware.js';
+import {authUser} from '../middleware/auth.middleware.js';
 
 router.get('/',
-    roleMiddleware(['admin','seller']),
-    checkPermission('list-students'),
+    roleMiddleware(['admin','faculty','student']),
+    checkPermission('listStudent'),
     listStudent);
 
 router.get('/profile/:id',
     authUser, 
-    roleMiddleware(['customer','admin']), 
-    checkPermission(''),
+    roleMiddleware(['faculty','student','admin']), 
+    checkPermission('viewStudent'),
     getStudent);
 
+router.post('/',
+    authUser,
+    roleMiddleware(['faculty','admin']),
+    checkPermission('addStudent'),
+    registerStudent);
+
 router.put('/profile/:id',
-    upload.single('image'), 
     authUser, 
-    roleMiddleware(['customer']), 
-    checkPermission('update_self'), 
+    roleMiddleware(['admin']), 
+    checkPermission('editStudent'), 
     updateStudent);
 
 router.delete('/profile/:id',
     authUser, 
     roleMiddleware(['admin']), 
-    checkPermission('delete_customer'), 
+    checkPermission('delStudent'), 
     removeStudent);
 
-module.exports=router;
+export default router;

@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const { JWT_ACC_SECRECT } = require('../config/env.config');
+import jwt from 'jsonwebtoken';
+import { JWT_ACC_SECRECT } from '../config/env.config.js';
 
-const roleMiddleware = (allowedRoles = []) => {
+export const roleMiddleware = (allowedRoles = []) => {
   return (req, res, next) => {
 
     
@@ -45,4 +45,3 @@ const roleMiddleware = (allowedRoles = []) => {
   };
 };
 
-module.exports = roleMiddleware;

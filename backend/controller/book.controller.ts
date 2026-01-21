@@ -1,4 +1,4 @@
-import prisma from "../config/prisma";
+import prisma from "../prisma.config.js";
 import type {bookCreateInput, bookModel, bookUpdateInput } from "../generated/prisma/models/book" 
 import type { Response, Request } from 'express';
 

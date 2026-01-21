@@ -1,47 +1,47 @@
-const express=require('express');
-const router=express.Router();
+import {Router} from 'express';
+const router=Router();
 
-const{
+import {
   listBooks,
   getBook,
   registerBook,
   updateBook,
   removeBook,
-} =require('../controller/book.controller');
+} from "../controller/book.controller.js"
 
-const authMiddleware = require('../middleware/auth.middleware');
-const checkPermission = require('../middleware/permission.middleware');
-const roleMiddleware = require('../middleware/role.middleware');
+
+import {roleMiddleware} from "../middleware/role.middleware.js";
+import checkPermission from "../middleware/permission.middleware.js";
+import {authUser} from "../middleware/auth.middleware.js";
 
 
 router.get('/',
-    authMiddleware,
     roleMiddleware(['admin','faculty','student']),
-    checkPermission('list-bookInfo'),
+    checkPermission('listBook'),
     listBooks);
 
 router.get('/:id', 
-    authMiddleware,
+    authUser,
     roleMiddleware(['admin','faculty','studemnt']),
-    checkPermission('view_products'),
+    checkPermission('viewBook'),
     getBook);
 
 router.post('/',
-    authMiddleware,
-    roleMiddleware(['faculty','admin']),
-    checkPermission('reg-bookInfo'),
+    authUser,
+    roleMiddleware(['admin']),
+    checkPermission('addBook'),
     registerBook);
 
 router.put('/:id',
-    authMiddleware,
-    roleMiddleware(['faculty','admin']),
-    checkPermission('update-bookInfo'),
+    authUser,
+    roleMiddleware(['admin']),
+    checkPermission('editBook'),
     updateBook);
 
 router.delete('/:id',
-    authMiddleware,
-    roleMiddleware(['faculty','admin']),
-    checkPermission('rmv-bookInfo'),
+    authUser,
+    roleMiddleware(['admin']),
+    checkPermission('delBook'),
     removeBook);
 
-module.exports=router;
+export default router;

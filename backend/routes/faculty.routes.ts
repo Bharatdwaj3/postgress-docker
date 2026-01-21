@@ -1,46 +1,45 @@
-const express=require('express');
-const router=express.Router();
-
-const{
-    listFaculty,
+import {Router} from 'express';
+const router=Router();
+import {
+listFaculty,
   getFaculty,
   registerFaculty,
   updateFaculty,
   removeFaculty,
     
-} =require('../controllers/faculty.controller');
+} from "../controller/faculty.controller.js";
 
-const roleMiddleware = require('../middleware/role.middleware');
-const checkPermission = require('../middleware/permission.middleware');
-const authUser=require('../middleware/auth.middleware');
+import {roleMiddleware} from "../middleware/role.middleware.js";
+import checkPermission from "../middleware/permission.middleware.js";
+import {authUser} from "../middleware/auth.middleware.js";
 
 router.get('/',
     roleMiddleware(['admin','seller','customer']),
-    checkPermission('view_sellers'),
+    checkPermission('listFaculty'),
     listFaculty);
     
 router.post('/',
     authUser,
-    roleMiddleware(['seller','admin']),
-    checkPermission('create_seller'),
+    roleMiddleware(['admin']),
+    checkPermission('addFaculty'),
     registerFaculty);
 
 router.get('/:id',
     authUser, 
-    roleMiddleware(['seller','admin']), 
-    checkPermission('view-self'),
+    roleMiddleware(['student','admin', 'faculty']), 
+    checkPermission('viewFaculty'),
     getFaculty);
 
 router.put('/profile/:id',
     authUser, 
-    roleMiddleware(['admin','seller']), 
-    checkPermission('update_seller'), 
-    upload.single('image'), 
+    roleMiddleware(['admin','faculty']), 
+    checkPermission('editFaculty'), 
     updateFaculty);
 
 router.delete('/:id',
-    roleMiddleware(['admin']), 
-    checkPermission('delete_seller'), 
+    roleMiddleware(['admin', 'faculty']), 
+    checkPermission('delFaculty'), 
     removeFaculty);
 
-module.exports=router;
+
+export default router;

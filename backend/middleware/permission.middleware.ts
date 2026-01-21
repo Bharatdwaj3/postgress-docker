@@ -1,4 +1,4 @@
-const PERMISSIONS=require('../config/permissions.config');
+import PERMISSIONS from '../config/permissions.config.js';
 
 const checkPermission=(permission)=>{
     return (req, res, next)=>{
@@ -11,4 +11,4 @@ const checkPermission=(permission)=>{
     };
 };
 
-module.exports=checkPermission;
+export default checkPermission;
