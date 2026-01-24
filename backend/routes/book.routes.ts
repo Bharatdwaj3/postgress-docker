@@ -1,5 +1,10 @@
 import {Router} from 'express';
+import { firebaseAuth } from '../middleware/firebase-auth.middleware.js';
+import { requireRole } from '../middleware/role.middleware.js';
+
+
 const router=Router();
+
 
 import {
   listBooks,
@@ -8,11 +13,6 @@ import {
   updateBook,
   removeBook,
 } from "../controller/book.controller.js"
-
-
-//import {roleMiddleware} from "../middleware/role.middleware.js";
-//import checkPermission from "../middleware/permission.middleware.js";
-//import {authUser} from "../middleware/auth.middleware.js";
 
 
 router.get('/',
