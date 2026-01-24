@@ -14,20 +14,6 @@ datasource db {
 }
 
 //
-model Writer {
-  id    Int     @id @default(autoincrement())
-  name  String
-  orign String?
-  books book[]
-}
-
-model Publisher {
-  id     Int     @id @default(autoincrement())
-  name   String
-  origin String?
-  books  book[]
-}
-
 enum Genre {
   FANTASY
   SCIENCE
@@ -41,25 +27,21 @@ enum Subject {
   History
 }
 
-//
-
 model book {
-  id        Int         @id @default(autoincrement())
-  name      String      @unique
-  publisher String
-  writer    Writer[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  publisher String?
+  writer    String?
   genre     Genre[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
-
-  publishers Publisher[]
 }
 
 model faculty {
-  id        Int     @id @default(autoincrement())
-  email     String  @unique
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
   Fname     String
   Lname     String
   age       Int
@@ -72,8 +54,8 @@ model faculty {
 }
 
 model student {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
   Fname    String
   Lname    String
   age      Int
@@ -83,9 +65,4 @@ model student {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
-}
-
-enum Role {
-  USER
-  ADMIN
 }
