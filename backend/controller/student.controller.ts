@@ -1,5 +1,5 @@
-import prisma from "../prisma.config.js";
-import type {studentCreateInput, studentModel, studentUpdateInput } from "../generated/prisma/models/student" 
+import prisma from "../config/prisma-client.js";
+import type {studentCreateInput, studentModel, studentUpdateInput } from "../generated/prisma/models/student.js" 
 import type { Response, Request } from 'express';
 
 const listStudent= async (req:Request, res:Response<any, studentModel>):Promise<void> => {

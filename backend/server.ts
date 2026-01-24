@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
+import prisma from './config/prisma-client.js';  
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(express.json());
-app.use(helmet);
+app.use(helmet());
 //cors
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,6 +25,15 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
+
+(async () => {
+  try {
+    await prisma.$connect();  
+    console.log('Prisma successfully connected to the database');
+  } catch (error) {
+    console.error('Failure to connect DB:', error);
+  }
+})();
 
 
 app.get('/', (req, res) => res.send('Server is ready'));

@@ -46,13 +46,15 @@ enum Subject {
 model book {
   id        Int         @id @default(autoincrement())
   name      String      @unique
-  publisher Publisher[]
+  publisher String
   writer    Writer[]
   genre     Genre[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+
+  publishers Publisher[]
 }
 
 model faculty {

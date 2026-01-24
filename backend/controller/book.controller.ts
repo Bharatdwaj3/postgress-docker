@@ -1,17 +1,29 @@
-import prisma from "../prisma.config.js";
-import type {bookCreateInput, bookModel, bookUpdateInput } from "../generated/prisma/models/book" 
-import type { Response, Request } from 'express';
+import prisma from "../config/prisma-client.js";
+import type {
+  bookCreateInput,
+  bookModel,
+  bookUpdateInput,
+} from "../generated/prisma/models/book.js";
+import type { Response, Request } from "express";
 
-const listBooks= async (req: Request, res: Response<any, bookModel[]>):Promise<void> => {
+const listBooks = async (
+  req: Request,
+  res: Response<any, bookModel[]>
+): Promise<void> => {
   try {
     const books = await prisma.book.findMany();
     res.status(200).json(books);
-  } catch (error:any) {
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    res.status(500).json({ message });
   }
-}
+};
 
-const getBook= async (req: Request<{id:string}>, res: Response<bookModel | null>): Promise<void> => {
+const getBook = async (
+  req: Request<{ id: string }>,
+  res: Response<bookModel | null | { message: string }>
+): Promise<void> => {
   try {
     const book = await prisma.book.findUnique({
       where: {
@@ -20,29 +32,37 @@ const getBook= async (req: Request<{id:string}>, res: Response<bookModel | null>
     });
     res.status(200).json(book);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    res.status(500).json({ message });
   }
 };
 
-
-const registerBook =async (req: Request<{}, {},bookCreateInput>, res:Response<bookModel|null>):Promise<void> => {
+const registerBook = async (
+  req: Request<{}, {}, bookCreateInput>,
+  res: Response<bookModel | null | { message: string }>
+): Promise<void> => {
   try {
     const book = await prisma.book.create({
       data: {
         name: req.body.name,
         publisher: req.body.publisher,
         writer: req.body.writer,
-        genre: req.body.genre
+        genre: req.body.genre,
       },
     });
     res.status(201).json(book);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    res.status(500).json({ message });
   }
 };
 
-
-const updateBook=async (req:Request<{id: string},{},bookUpdateInput>, res:Response<bookModel>):Promise<void> => {
+const updateBook = async (
+  req: Request<{ id: string }, {}, bookUpdateInput>,
+  res: Response<bookModel | null | { message: string }>
+): Promise<void> => {
   try {
     const book = await prisma.book.update({
       where: {
@@ -52,17 +72,21 @@ const updateBook=async (req:Request<{id: string},{},bookUpdateInput>, res:Respon
         name: req.body.name,
         publisher: req.body.publisher,
         writer: req.body.writer,
-        genre: req.body.genre
+        genre: req.body.genre,
       },
     });
     res.status(200).json(book);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    res.status(500).json({ message });
   }
 };
 
-
-const removeBook = async (req:Request<{id: string},{},bookModel>, res:Response<bookModel>):Promise<void> => {
+const removeBook = async (
+  req: Request<{ id: string }, {}, bookModel>,
+  res: Response<bookModel | null | { message: string }>
+): Promise<void> => {
   try {
     const book = await prisma.book.delete({
       where: {
@@ -71,14 +95,10 @@ const removeBook = async (req:Request<{id: string},{},bookModel>, res:Response<b
     });
     res.status(200).json(book);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    res.status(500).json({ message });
   }
 };
 
-export {
-  listBooks,
-  getBook,
-  registerBook,
-  updateBook,
-  removeBook,
-};
+export { listBooks, getBook, registerBook, updateBook, removeBook };
