@@ -1,279 +1,286 @@
-/* eslint-disable react-hooks/static-components */
 import React, { useEffect, useState, Suspense, lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-  CalendarToday,
-  People,
-  Article,
-  Edit,
-} from "@mui/icons-material";
-import {
-  Box, CircularProgress, Avatar, Button,
-  Typography, Divider, Chip, Grid, Paper,
-  Tabs, Tab,
-} from "@mui/material";
+  Calendar,
+  Users,
+  FileText,
+  Edit3,
+  Settings,
+  Plus,
+  Award,
+  Eye,
+} from "lucide-react";
+import { motion } from "framer-motion";
 import api from "../../util/api";
 
 const ContentTab = lazy(() => import("../content/ContentTab.jsx"));
 
 const WriterProfile = () => {
   const navigate = useNavigate();
-  const { user } = useSelector(state => state.avatar);
+  const { user } = useSelector((state) => state.avatar);
   const [writer, setWriter] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [tab, setTab] = useState(0);
+  const [contentCount, setContentCount] = useState(0);
+
+  const followers = useSelector((state) => state.follow.following);
+  const following = useSelector((state) => state.follow.following);
 
   useEffect(() => {
     const fetchWriter = async () => {
       try {
         setLoading(true);
-
         if (user) {
           setWriter(user);
           setLoading(false);
           return;
         }
-
-        const { data } = await api.get('/user/writer/profile');
+        const { data } = await api.get("/user/profile");
         setWriter(data);
         setLoading(false);
-        
       } catch (e) {
-        console.error('Writer profile error:', e);
-        setError(e.response?.data?.message || "Failed to load your profile");
+        console.error("Failed to fetch writer profile:", e);
         setLoading(false);
-        
-        if (e.response?.status === 401) {
-          navigate("/login");
-        }
       }
     };
-
     fetchWriter();
-  }, [navigate, user]);
+  }, [user]);
+
+  useEffect(() => {
+    const fetchContentCount = async () => {
+      try {
+        const res = await api.get("/content");
+        const userContent = res.data.filter(
+          (item) => item?.userId?._id === user?.id
+        );
+        setContentCount(userContent.length);
+      } catch (e) {
+        console.error("Failed to fetch content count: ", e);
+      }
+    };
+    fetchContentCount();
+  }, [user, writer]);
 
   if (loading) {
     return (
-      <Box className="flex justify-center items-center h-screen">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box className="flex justify-center items-center h-screen p-4">
-        <Box className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg max-w-md w-full text-center">
-          {error}
-        </Box>
-      </Box>
-    );
-  }
-
-  if (!writer) {
-    return (
-      <Box className="flex justify-center items-center h-screen">
-        <Typography>No profile data available</Typography>
-      </Box>
-    );
-  }
-
-  const username = writer.storeName?.toLowerCase().replace(/\s+/g, "_") || 
-                   writer.userName?.toLowerCase().replace(/\s+/g, "_") || 
-                   "creator";
-
-const OverviewPanel = () => (
-  <div className="space-y-12">
-
-    {/* Header – avatar + handle + name + joined */}
-    <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10 mb-10">
-      <Avatar 
-        src={writer.user?.imageUrl || writer.mediaUrl || ''} 
-        sx={{ width: { xs: 100, md: 140 }, height: { xs: 100, md: 140 } }}
-        className="border-4 border-gray-700 shadow-xl"
-      >
-        {(writer.user?.fullName?.[0] || writer.user?.username?.[0] || 'C').toUpperCase()}
-      </Avatar>
-
-      <div className="text-center md:text-left">
-        <h1 className="text-4xl md:text-5xl font-bold text-white">
-          @{writer.user?.username || writer.userName || 'creator'}
-        </h1>
-        
-        <p className="text-xl text-gray-300 mt-2">
-          {writer.user?.fullName || 'Fill plz (full name)'}
-        </p>
-
-        <p className="text-gray-400 mt-3 flex items-center justify-center md:justify-start gap-2">
-          <CalendarToday fontSize="small" />
-          Joined {writer.createdAt 
-            ? new Date(writer.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-            : 'Fill plz (join date)'}
-        </p>
-
-        <Button
-          variant="outlined"
-          startIcon={<Edit />}
-          onClick={() => navigate("/creator/edit")}
-          sx={{
-            mt: 3,
-            borderColor: '#8b5cf6',
-            color: '#8b5cf6',
-            '&:hover': { bgcolor: 'rgba(139,92,246,0.08)' }
-          }}
-        >
-          Edit Profile
-        </Button>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
-    </div>
+    );
+  }
 
-    {/* Quick stats */}
-    <div className="flex flex-wrap gap-4 justify-center md:justify-start mt-6 mb-10">
-      <Chip
-        icon={<Article fontSize="small" />}
-        label={`${writer.authored?.length || 0} Contents`}
-        variant="outlined"
-        sx={{ bgcolor: 'rgba(139,92,246,0.1)', borderColor: '#8b5cf6', color: '#d1d5db' }}
-      />
-      <Chip
-        icon={<People fontSize="small" />}
-        label={`${writer.followers?.length || 0} Followers`}
-        variant="outlined"
-        sx={{ bgcolor: 'rgba(139,92,246,0.1)', borderColor: '#8b5cf6', color: '#d1d5db' }}
-      />
-      <Chip
-        icon={<People fontSize="small" />}
-        label={`${writer.following?.length || 0} Following`}
-        variant="outlined"
-        sx={{ bgcolor: 'rgba(139,92,246,0.1)', borderColor: '#8b5cf6', color: '#d1d5db' }}
-      />
-    </div>
-
-    <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)', my: 6 }} />
-
-    {/* Bio */}
-    <div className="bg-gray-900/60 p-8 rounded-2xl border border-gray-800">
-      <Typography variant="h5" className="font-bold mb-4 text-white">Bio</Typography>
-      <Typography className="text-gray-300 leading-relaxed whitespace-pre-line">
-        {writer.bio || 'Fill plz (tell readers about yourself)'}
-      </Typography>
-    </div>
-
-    {/* Interests */}
-    <div className="mt-10">
-      <Typography variant="h6" className="font-semibold mb-4 text-gray-200">Interests</Typography>
-      {writer.intrests?.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {writer.intrests.map((tag, i) => (
-            <Chip
-              key={i}
-              label={tag}
-              variant="outlined"
-              sx={{ borderColor: '#8b5cf6', color: '#c4b5fd' }}
-            />
-          ))}
-        </div>
-      ) : (
-        <Typography className="text-gray-500 italic">
-          Fill plz (add your interests: fiction, science, art, daily)
-        </Typography>
-      )}
-    </div>
-
-    {/* Profile Media / Cover (if you want to show it separately) */}
-    <div className="mt-10">
-      <Typography variant="h6" className="font-semibold mb-4 text-gray-200">Profile Media</Typography>
-      {writer.mediaUrl ? (
-        <img 
-          src={writer.mediaUrl} 
-          alt="Profile media" 
-          className="max-w-full h-auto rounded-xl border border-gray-700 shadow-md"
-          style={{ maxHeight: '300px', objectFit: 'cover' }}
-        />
-      ) : (
-        <Typography className="text-gray-500 italic">
-          Fill plz (upload profile picture or banner)
-        </Typography>
-      )}
-    </div>
-
-    {/* Recent Content Preview */}
-    <div className="mt-12">
-      <div className="flex justify-between items-center mb-6">
-        <Typography variant="h5" className="font-bold text-white">Recent Content</Typography>
-        <Button 
-          variant="text" 
-          sx={{ color: '#8b5cf6', textTransform: 'none' }}
-          onClick={() => setTab(1)}
-        >
-          View all →
-        </Button>
-      </div>
-
-      {writer.authored?.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(writer.authored || []).slice(0, 3).map((item, idx) => (
-            <Paper 
-              key={idx}
-              elevation={0}
-              className="p-6 bg-gray-900/50 rounded-xl border border-gray-800 hover:border-purple-600/50 transition-all"
-            >
-              <Typography variant="h6" className="text-white mb-2 line-clamp-2">
-                {item.title || `Content #${idx + 1}`}
-              </Typography>
-              <Typography variant="body2" className="text-gray-400 line-clamp-3">
-                {item.description || 'No description available'}
-              </Typography>
-            </Paper>
-          ))}
-        </div>
-      ) : (
-        <Typography className="text-center text-gray-500 py-12">
-          Fill plz – you haven't published any content yet
-        </Typography>
-      )}
-    </div>
-
-  </div>
-);
   return (
-    <div className="w-screen bg-gradient-to-br from-gray-900 to-black min-h-screen text-white pt-20">
-      <Box className="border-b border-gray-700 sticky top-16 bg-gray-900 z-10">
-        <Tabs 
-          value={tab} 
-          onChange={(_, v) => setTab(v)} 
-          variant="fullWidth"
-          sx={{
-            "& .MuiTabs-indicator": { backgroundColor: "#8b5cf6", height: 3 },
-            "& .MuiTab-root": { 
-              textTransform: "none", 
-              fontWeight: 600, 
-              color: "#9ca3af", 
-              "&.Mui-selected": { color: "#8b5cf6" } 
-            },
-          }}
+    <div className="min-h-screen bg-background text-foreground pt-24 pb-20 px-6">
+      <div className="max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl border border-border shadow-lg p-8 mb-8 relative overflow-hidden"
         >
-          <Tab label="Overview" />
-          <Tab label="Content" />
-        </Tabs>
-      </Box>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-full blur-3xl -z-10" />
 
-      <Box className="p-6 md:p-12 max-w-7xl mx-auto">
-        {tab === 0 && <OverviewPanel />}
-        {tab === 1 && (
-          <Suspense 
-            fallback={
-              <Box className="flex justify-center py-16">
-                <CircularProgress sx={{ color: "#8b5cf6" }} />
-              </Box>
-            }
-          >
-            <ContentTab /> 
-          </Suspense>
-        )}
-      </Box>
+          <div className="flex flex-col md:flex-row items-start gap-8">
+            <div className="relative flex-shrink-0">
+              <div className="w-32 h-32 rounded-2xl ring-4 ring-background shadow-xl overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10">
+                <img
+                  src={
+                    writer?.avatar ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${writer?.userName}`
+                  }
+                  className="w-full h-full object-cover"
+                  alt="avatar"
+                />
+              </div>
+              <button
+                onClick={() => navigate("/edit-profile")}
+                className="absolute -bottom-3 -right-3 p-3 bg-primary rounded-xl text-white shadow-lg hover:scale-110 transition-transform"
+              >
+                <Edit3 size={18} />
+              </button>
+            </div>
+
+            <div className="grow">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+                      {writer?.fullName || writer?.userName}
+                    </h1>
+                    <span className="px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-bold rounded-full">
+                      Writer
+                    </span>
+                  </div>
+                  <p className="text-foreground/50 text-sm mb-4">
+                    @{writer?.userName}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => navigate("/settings")}
+                  className="p-2 hover:bg-foreground/5 rounded-lg transition-colors"
+                >
+                  <Settings size={20} className="text-foreground/40" />
+                </button>
+              </div>
+
+              {writer?.bio && (
+                <p className="text-foreground/70 leading-relaxed mb-6 max-w-2xl">
+                  {writer.bio}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-6 mb-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                    <Users size={18} className="text-secondary" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">
+                      {writer?.followers?.length || following?.length || 0}
+                    </p>
+                    <p className="text-xs text-foreground/50">Followers</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileText size={18} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">
+                      {writer?.publishedContent?.length || 0}
+                    </p>
+                    <p className="text-xs text-foreground/50">Stories</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                    <Eye size={18} className="text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">0</p>
+                    <p className="text-xs text-foreground/50">Total Views</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => navigate("/writer/new")}
+                  className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold text-sm flex items-center gap-2"
+                >
+                  <Plus size={18} /> New Story
+                </button>
+                <button className="px-6 py-3 border border-border rounded-lg hover:border-primary hover:text-primary transition-colors font-semibold text-sm">
+                  View Public Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="flex gap-1 mb-8 bg-card rounded-xl p-1.5 border border-border w-fit">
+          {["Overview", "Stories", "Followers"].map((label, i) => (
+            <button
+              key={label}
+              onClick={() => setTab(i)}
+              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+                tab === i
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-foreground/60 hover:text-foreground hover:bg-foreground/5"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-[400px]">
+          {tab === 1 ? (
+            <Suspense
+              fallback={
+                <div className="bg-card rounded-2xl border border-border p-8 animate-pulse">
+                  <div className="h-64 bg-foreground/5 rounded-lg" />
+                </div>
+              }
+            >
+              <ContentTab user={user} writer={writer}/>
+            </Suspense>
+          ) : tab === 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card border border-border rounded-2xl p-6 hover:shadow-lg transition-shadow"
+              >
+                <h4 className="text-sm font-bold text-foreground/40 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <FileText size={16} /> About
+                </h4>
+                <p className="text-sm leading-relaxed text-foreground/70">
+                  {writer?.bio ||
+                    "This writer hasn't added a bio yet. Stay tuned for updates!"}
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-card border border-border rounded-2xl p-6 hover:shadow-lg transition-shadow"
+              >
+                <h4 className="text-sm font-bold text-foreground/40 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Calendar size={16} /> Member Since
+                </h4>
+                <p className="text-2xl font-bold text-foreground mb-1">
+                  {writer?.createdAt
+                    ? new Date(writer.createdAt).toLocaleDateString("en-US", {
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "Recently"}
+                </p>
+                <p className="text-sm text-foreground/50">
+                  Writing and sharing stories
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-gradient-to-br from-accent/5 to-primary/5 border border-border rounded-2xl p-6 hover:shadow-lg transition-shadow"
+              >
+                <h4 className="text-sm font-bold text-foreground/40 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Award size={16} /> Achievements
+                </h4>
+                <p className="text-2xl font-bold text-foreground mb-1">
+                  Getting Started
+                </p>
+                <p className="text-sm text-foreground/50">
+                  Keep writing to unlock badges!
+                </p>
+              </motion.div>
+            </div>
+          ) :  ( 
+            <div className="bg-card border border-border rounded-2xl p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-full bg-foreground/5 flex items-center justify-center mx-auto mb-4">
+                  <Award size={32} className="text-foreground/20" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">
+                  Analytics Coming Soon
+                </h3>
+                <p className="text-foreground/50">
+                  Track your story performance, reader engagement, and growth
+                  metrics.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

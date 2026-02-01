@@ -1,3 +1,5 @@
+import { firebaseAuth } from '../middleware/fireauth.middleware.ts';
+import { requireRole } from '../middleware/role.middleware.ts';
 import {Router} from 'express';
 const router=Router();
 
@@ -7,39 +9,32 @@ import {
   registerStudent,
   updateStudent,
   removeStudent,
-} from '../controller/student.controller.js';
+} from '../controller/student.controller.ts';
 
-import checkPermission from '../middleware/permission.middleware.js';
-import {roleMiddleware} from '../middleware/role.middleware.js';
-import {authUser} from '../middleware/auth.middleware.js';
+
 
 router.get('/',
-    roleMiddleware(['admin','faculty','student']),
-    checkPermission('listStudent'),
+    requireRole(['admin','faculty','student']),
     listStudent);
 
 router.get('/profile/:id',
-    authUser, 
-    roleMiddleware(['faculty','student','admin']), 
-    checkPermission('viewStudent'),
+    firebaseAuth, 
+    requireRole(['faculty','student','admin']), 
     getStudent);
 
 router.post('/',
-    authUser,
-    roleMiddleware(['faculty','admin']),
-    checkPermission('addStudent'),
+    firebaseAuth,
+    requireRole(['faculty','admin']),
     registerStudent);
 
 router.put('/profile/:id',
-    authUser, 
-    roleMiddleware(['admin']), 
-    checkPermission('editStudent'), 
+    firebaseAuth, 
+    requireRole(['admin']), 
     updateStudent);
 
 router.delete('/profile/:id',
-    authUser, 
-    roleMiddleware(['admin']), 
-    checkPermission('delStudent'), 
+    firebaseAuth, 
+    requireRole(['admin']), 
     removeStudent);
 
 export default router;

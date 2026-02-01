@@ -1,7 +1,7 @@
 import morgan, { token } from 'morgan';
 
 
-// 🌈 Colorize HTTP methods
+// Colorize HTTP methods
 token('colored-method', (req) => {
   const method = req.method;
   switch (method) {
@@ -13,7 +13,7 @@ token('colored-method', (req) => {
   }
 });
 
-// 🌈 Colorize status codes
+// Colorize status codes
 token('colored-status', (req, res) => {
   const status = res.statusCode;
   if (status >= 500) return `\x1b[31m${status}\x1b[0m`; // red
@@ -23,16 +23,16 @@ token('colored-status', (req, res) => {
   return status;
 });
 
-// 🌐 Remote IP
+// Remote IP
 token('remote-addr', (req) => req.ip || req.connection.remoteAddress);
 
-// 🕒 Timestamp
+// Timestamp
 token('date', () => new Date().toISOString());
 
-// 💻 User agent
+// User agent
 token('user-agent', (req) => req.headers['user-agent'] || '-');
 
-// 🔹 Custom format
+// Custom format
 const customFormat = ':date | :remote-addr | :colored-method :url HTTP/:http-version | Status: :colored-status | :res[content-length] bytes | :response-time ms | Agent: :user-agent';
 
 export default morgan(customFormat);

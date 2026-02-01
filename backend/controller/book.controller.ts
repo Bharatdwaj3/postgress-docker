@@ -1,9 +1,9 @@
-import prisma from "../config/prisma-client.js";
+import prisma from "../config/prisma-client.ts";
 import type {
   bookCreateInput,
   bookModel,
   bookUpdateInput,
-} from "../generated/prisma/models/book.js";
+} from "../generated/prisma/models/book.ts";
 import type { Response, Request } from "express";
 
 const listBooks = async (

@@ -1,24 +1,25 @@
-import { Request, Response } from 'express';
-import { auth } from '../config/firebase-admin.config.js';
-import prisma from '../config/prisma-client.js';
-import { AuthRequest } from '../middleware/firebase-auth.middleware.js';
+import express from 'express';
+import { auth } from '../config/firebase-admin.config.ts';
+import prisma from '../config/prisma-client.ts';
+import type { AuthRequest } from '../middleware/fireauth.middleware.ts';
 
-// Register new user
+
+type Request = express.Request;
+type Response = express.Response;
+type NextFunction = express.NextFunction;
+
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, role, firstName, lastName, age, gender } = req.body;
 
-    // Create user in Firebase
     const userRecord = await auth.createUser({
       email,
       password,
       displayName: `${firstName} ${lastName}`,
     });
 
-    // Set custom claims for role
     await auth.setCustomUserClaims(userRecord.uid, { role });
 
-    // Store additional info in your database based on role
     if (role === 'faculty') {
       await prisma.faculty.create({
         data: {
@@ -55,7 +56,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// Get current user info
 export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const uid = req.user?.uid;
@@ -80,7 +80,6 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
-// Update user role (admin only)
 export const updateUserRole = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { uid, role } = req.body;
@@ -98,7 +97,7 @@ export const updateUserRole = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-// Delete user
+
 export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { uid } = req.params;

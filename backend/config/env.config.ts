@@ -1,5 +1,17 @@
 import 'dotenv/config';
 
+const Fbase_project_id=process.env.Fbase_project_id||"some_firebase_project_id";
+const Fbase_public_key=process.env.Fbase_public_key||"firebase_project_public_key"; 
+const Fbase_private_key_id=process.env.Fbase_private_key_id||"firebase_project_private_key_id"; 
+const Fbase_client_email=process.env.Fbase_client_email||"firebase_project_client_email_id";
+const Fbase_client_id=process.env.Fbase_client_id||"firebase_project_client_id";
+const Fbase_auth_uri=process.env.Fbase_auth_uri||"google_auth_uri";
+const Fbase_token_uri=process.env.Fbase_token_uri||"google_auth_token";
+const Fbase_auth_provider_x509_cert_url=process.env.Fbase_auth_provider_x509_cert_url||"auth_provider"; 
+const Fbase_client_x509_cert_url=process.env.Fbase_client_x509_cert_url||"auth_provider_url"; 
+const Fbase_universe_domain=process.env.Fbase_universe_domain||"google_universal_domain";
+
+
 const DB_USER = process.env.DB_USER || 'some_pgSql_db_user';
 const DB_HOST =  process.env.DB_HOST || 'some_pgSql_db_host'
 const DB_PORT = process.env.DB_PORT || 'some_pgSql_db_port';
@@ -34,6 +46,8 @@ const SMTP_USER=process.env.SMTP_USER || 'some smtp user'
 const SMTP_PASS=process.env.SMTP_PASS  || 'some smtp secret'
 
 export {
+    Fbase_project_id, Fbase_public_key, Fbase_private_key_id, Fbase_client_email,Fbase_client_id,Fbase_auth_uri,Fbase_token_uri,Fbase_auth_provider_x509_cert_url, Fbase_client_x509_cert_url, Fbase_universe_domain,     
+    //F_API_KEY, F_AUTH_DOMAIN, F_PROJECT_ID, F_STORAGE_BUCKET, F_MSG_ID, F_APP_ID,
     DB_USER, DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT,
     SESSION_SECRECT, 
     JWT_ACC_EXPIRES_IN, JWT_ACC_SECRECT, JWT_REF_EXPIRES_IN, JWT_REF_SECRECT,

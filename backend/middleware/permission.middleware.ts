@@ -1,7 +1,12 @@
-import PERMISSIONS from '../config/permissions.config.js';
+import PERMISSIONS from '../config/permissions.config.ts';
+import express from 'express';
 
-const checkPermission=(permission)=>{
-    return (req, res, next)=>{
+type Request = express.Request;
+type Response = express.Response;
+type NextFunction = express.NextFunction;
+
+const checkPermission=(permission: any)=>{
+    return (req:Request, res:Response, next:NextFunction)=>{
         const userRole = req.role || req.user?.accountType || 'guest';
         const allowed = PERMISSIONS[userRole] || [];
         if(!allowed.includes(permission)){

@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { firebaseAuth } from '../middleware/firebase-auth.middleware.js';
+import { firebaseAuth } from '../middleware/fireauth.middleware.ts';
 import {
   uploadFile,
   getFileUrl,
   deleteFile,
   listFiles,
-} from '../controller/storage.controller.js';
+} from '../controller/storage.controller.ts';
 
 const router = Router();
 

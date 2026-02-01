@@ -1,6 +1,12 @@
-import { Request, Response } from 'express';
-import { storage } from '../config/firebase-admin.config.js';
-import { AuthRequest } from '../middleware/firebase-auth.middleware.js';
+import express from 'express';
+import { storage } from '../config/firebase-admin.config.ts';
+import type { AuthRequest } from '../middleware/fireauth.middleware.ts';
+
+
+type Request = express.Request;
+type Response = express.Response;
+type NextFunction = express.NextFunction;
+
 
 // Upload file
 export const uploadFile = async (req: AuthRequest, res: Response): Promise<void> => {

@@ -1,6 +1,6 @@
 import {Router} from 'express';
-import { firebaseAuth } from '../middleware/firebase-auth.middleware.js';
-import { requireRole } from '../middleware/role.middleware.js';
+import { firebaseAuth } from '../middleware/fireauth.middleware.ts';
+import { requireRole } from '../middleware/role.middleware.ts';
 
 
 const router=Router();
@@ -12,36 +12,25 @@ import {
   registerBook,
   updateBook,
   removeBook,
-} from "../controller/book.controller.js"
+} from "../controller/book.controller.ts"
 
 
-router.get('/',
-    //roleMiddleware(['admin','faculty','student']),
-    //checkPermission('listBook'),
-    listBooks);
-
-router.get('/:id', 
-    //authUser,
-    //roleMiddleware(['admin','faculty','studemnt']),
-    //checkPermission('viewBook'),
-    getBook);
+router.get('/',listBooks);
+router.get('/:id',getBook);
 
 router.post('/',
-    //authUser,
-    //roleMiddleware(['admin']),
-    //checkPermission('addBook'),
+    firebaseAuth,
+    requireRole(['admin','faculty']),
     registerBook);
 
 router.put('/:id',
-    //authUser,
-    //roleMiddleware(['admin']),
-    //checkPermission('editBook'),
+    firebaseAuth,
+    requireRole(['admin']),
     updateBook);
 
 router.delete('/:id',
-    //authUser,
-    //roleMiddleware(['admin']),
-    //checkPermission('delBook'),
+    firebaseAuth,
+    requireRole(['admin']),
     removeBook);
 
 export default router;

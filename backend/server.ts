@@ -1,14 +1,21 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
-import prisma from './config/prisma-client.js';
+
+
+import cookieParser from "cookie-parser";
+
+
+import prisma from './config/prisma-client.ts';
+//import morganConfig from './config/morgan.config.ts';
 
 // Import routes
-import authRoutes from "./routes/auth.routes.js";
-import bookRoutes from "./routes/book.routes.js";
-import facultyRoutes from "./routes/faculty.routes.js";
-import studentRoutes from "./routes/student.routes.js";
-import storageRoutes from "./routes/storage.routes.js";
+import bookRoutes from "./routes/book.routes.ts";
+import facultyRoutes from "./routes/faculty.routes.ts";
+import studentRoutes from "./routes/student.routes.ts";
+import storageRoutes from "./routes/storage.routes.ts";
+import authRoutes from "./routes/auth.routes.ts";
+import morgan from 'morgan';
 
 dotenv.config();
 
@@ -18,6 +25,10 @@ const PORT = process.env.PORT || 3001;
 // Middlewares
 app.use(express.json());
 app.use(helmet());
+app.use(express.urlencoded({ extended: true, limit: "8kb" }));
+app.use(cookieParser());
+app.use(morgan('dev'));
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');

@@ -1,6 +1,10 @@
-import { Response, NextFunction } from 'express';
-import { auth } from '../config/firebase-admin.config.js';
-import { AuthRequest } from './firebase-auth.middleware.js';
+import express from 'express';
+
+type Request = express.Request;
+type Response = express.Response;
+type NextFunction = express.NextFunction;
+import { auth } from '../config/firebase-admin.config.ts';
+import type { AuthRequest } from './fireauth.middleware.ts';
 
 export const requireRole = (allowedRoles: string[]) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {

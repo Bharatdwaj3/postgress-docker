@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "module": "nodenext",
+    "allowImportingTsExtensions": true,
     "target": "esnext",
     "moduleResolution": "nodenext",
     "types": ["node"],
     "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
+    "declarationMap": false,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false,
     "strict": true,
@@ -17,6 +18,7 @@
     "skipLibCheck": true,
     "checkJs": true,
     "noEmit": true,
+    
     "allowJs": true
   },
   "include": ["**/*.ts", "**/*.js"],

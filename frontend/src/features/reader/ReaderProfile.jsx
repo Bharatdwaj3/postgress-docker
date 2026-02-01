@@ -1,271 +1,367 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleBookmark, clearHistory } from "../../store/contentSlice";
+
 import {
-  Person, Email, Cake, Today, CheckCircle, Cancel, Edit,
-} from "@mui/icons-material";
-import {
-  Box, CircularProgress, Avatar, Button,
-  Typography, Divider, Chip, Grid, Paper,
-  Tabs, Tab,
-} from "@mui/material";
+  User,
+  Mail,
+  Clock,
+  History,
+  Calendar,
+  Bookmark,
+  ShieldCheck,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
+import { motion } from "framer-motion";
 import api from "../../util/api";
 
 const ReaderProfile = () => {
-  const navigate = useNavigate();
   const { user } = useSelector((state) => state.avatar);
   const [reader, setReader] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [tab, setTab] = useState(0);
+
+  const [savedStories, setSavedStories] = useState([]);
+  const [visitedStories, setVisitedStories] = useState([]);
+
+  const [fetching, setFetching] = useState(false);
+
+  const bookmarks = useSelector((state) => state.content.bookmarks);
+  const visitedArticles = useSelector((state) => state.content.visitedArticles);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchReader = async () => {
       try {
-        setLoading(true);
-
         if (user) {
           setReader(user);
           setLoading(false);
           return;
         }
-
         const { data } = await api.get("/user/reader/");
-        console.log("API Response:", data);
         setReader(data);
         setLoading(false);
       } catch (e) {
-        console.error("Reader profile error:", e);
-        setError(e.response?.data?.message || "Failed to load your profile");
+        console.error(e);
         setLoading(false);
+      }
+    };
+    fetchReader();
+  }, [user]);
 
-        if (e.response?.status === 401) {
-          navigate("/login");
+  useEffect(() => {
+    const fetchSavedStories = async () => {
+      if (bookmarks.length === 0) {
+        setSavedStories([]);
+        return;
+      }
+
+      setFetching(true);
+
+      try {
+        const fetchedStories = [];
+
+        for (const id of bookmarks) {
+          try {
+            const res = await api.get(`/content/${id}`);
+            fetchedStories.push(res.data);
+          } catch (err) {
+            console.log(`Couldn't fetch content ${id}`, err);
+          }
         }
+
+        setSavedStories(fetchedStories);
+      } catch (err) {
+        console.error(err);
+        setSavedStories([]);
+      } finally {
+        setFetching(false);
       }
     };
 
-    fetchReader();
-  }, [navigate, user]);
+    fetchSavedStories();
+  }, [bookmarks]);
 
-  if (loading) {
-    return (
-      <Box className="flex justify-center items-center h-screen">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  useEffect(() => {
+    const fetchVisitedStories = async () => {
+      if (visitedArticles.length === 0) {
+        setVisitedStories([]);
+        return;
+      }
 
-  if (error) {
-    return (
-      <Box className="flex justify-center items-center h-screen p-4">
-        <Box className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg max-w-md w-full text-center">
-          {error}
-        </Box>
-      </Box>
-    );
-  }
+      setFetching(true);
+      try {
+        const fetchedStories = [];
+        const recentVisits = visitedArticles.slice(0, 50);
 
-  if (!reader) {
-    return (
-      <Box className="flex justify-center items-center h-screen">
-        <Typography>No profile data available</Typography>
-      </Box>
-    );
-  }
+        for (const id of recentVisits) {
+          try {
+            const res = await api.get(`content/${id}`);
+            fetchedStories.push({
+              ...res.data,
+              visitedAt: visitedArticles.indexOf(id),
+            });
+          } catch (err) {
+            console.log(`Couldn't fetch visited content ${id}`, err);
+          }
+        }
+        setVisitedStories(fetchedStories);
+      } catch (err) {
+        console.error(err);
+        setVisitedStories([]);
+      } finally {
+        setFetching(false);
+      }
+    };
 
-  const username =
-    reader.userName?.toLowerCase().replace(/\s+/g, "_") ||
-    reader.fullName?.toLowerCase().replace(/\s+/g, "_") ||
-    "reader";
+    if (tab === 1) {
+      fetchVisitedStories();
+    }
+  }, [visitedArticles, tab]);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "—";
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch (e) {
-      return "Invalid Date",e;
+  const handleClearHistory = () => {
+    if (
+      window.confirm("Are you sure you want to clear your browsing history?")
+    ) {
+      dispatch(clearHistory());
+      setVisitedStories([]);
     }
   };
 
-  const OverviewPanel = () => (
-    <div className="space-y-12">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Avatar
-            src={reader.avatar}
-            sx={{ width: 100, height: 100 }}
-            className="border-4 border-white shadow-lg"
-          >
-            {reader.fullName?.[0]?.toUpperCase() ||
-              reader.userName?.[0]?.toUpperCase() ||
-              "R"}
-          </Avatar>
-          <div>
-            <h1 className="text-3xl font-bold text-white">@{username}</h1>
-            <p className="flex items-center gap-2 text-gray-300 mt-1">
-              <Person fontSize="small" /> {reader.fullName}
-            </p>
-            <p className="flex items-center gap-2 text-sm text-gray-400">
-              <Email fontSize="small" /> {reader.email}
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="outlined"
-          startIcon={<Edit />}
-          onClick={() => navigate("/reader/edit")}
-          sx={{ borderColor: "#8b5cf6", color: "#8b5cf6" }}
-        >
-          Edit Profile
-        </Button>
-      </div>
-
-     
-      <Grid container spacing={4}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Paper className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Cake className="w-10 h-10 text-amber-600" />
-              <div>
-                <Typography variant="h6" className="font-bold text-gray-900">
-                  {formatDate(reader.createdAt)}
-                </Typography>
-                <Typography variant="body2" className="text-amber-600">
-                  Member Since
-                </Typography>
-              </div>
-            </div>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <Paper className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Today className="w-10 h-10 text-blue-600" />
-              <div>
-                <Typography variant="h6" className="font-bold text-gray-900">
-                  {formatDate(reader.lastLogin)}
-                </Typography>
-                <Typography variant="body2" className="text-blue-600">
-                  Last Login
-                </Typography>
-              </div>
-            </div>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <Paper className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
-            <div className="flex items-center gap-3">
-              {reader.isActive ? (
-                <CheckCircle className="w-10 h-10 text-purple-600" />
-              ) : (
-                <Cancel className="w-10 h-10 text-purple-600" />
-              )}
-              <div>
-                <Typography variant="h6" className="font-bold text-gray-900">
-                  {reader.isActive ? "Active" : "Inactive"}
-                </Typography>
-                <Typography variant="body2" className="text-purple-600">
-                  Account Status
-                </Typography>
-              </div>
-            </div>
-          </Paper>
-        </Grid>
-      </Grid>
-
-     
-      <div className="flex items-center gap-3">
-        <Person className="w-7 h-7 text-indigo-600" />
-        <Typography variant="h4" className="font-bold text-white">
-          {reader.fullName || "Reader Profile"}
-        </Typography>
-        <Chip
-          label={reader.accountType?.charAt(0).toUpperCase() + reader.accountType?.slice(1)}
-          color="primary"
-        />
-        {reader.isActive ? (
-          <Chip icon={<CheckCircle />} label="Active" color="success" />
-        ) : (
-          <Chip icon={<Cancel />} label="Inactive" color="error" />
-        )}
-      </div>
-
-      <Divider sx={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
-
-     
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Typography variant="h6" className="flex items-center gap-2 font-semibold text-gray-300">
-            <Person className="w-5 h-5 text-teal-600" /> Username
-          </Typography>
-          <Typography className="text-gray-300 pl-7 font-mono">
-            @{username}
-          </Typography>
-        </div>
-
-        <div className="space-y-2">
-          <Typography variant="h6" className="flex items-center gap-2 font-semibold text-gray-300">
-            <Email className="w-5 h-5 text-purple-600" /> Email Address
-          </Typography>
-          <Typography className="text-gray-300 pl-7 break-all">
-            {reader.email}
-          </Typography>
-        </div>
-
-        <div className="space-y-2">
-          <Typography variant="h6" className="flex items-center gap-2 font-semibold text-gray-300">
-            <Cake className="w-5 h-5 text-amber-600" /> Profile Created
-          </Typography>
-          <Typography className="text-gray-300 pl-7">
-            {formatDate(reader.createdAt)}
-          </Typography>
-        </div>
-
-        <div className="space-y-2">
-          <Typography variant="h6" className="flex items-center gap-2 font-semibold text-gray-300">
-            <Today className="w-5 h-5 text-blue-600" /> Last Updated
-          </Typography>
-          <Typography className="text-gray-300 pl-7">
-            {formatDate(reader.updatedAt)}
-          </Typography>
-        </div>
-      </div>
-
-      <Divider sx={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="min-h-screen bg-semi-dark flex items-center justify-center" />
+    );
 
   return (
-    <div className="w-screen bg-gradient-to-br from-gray-900 to-black min-h-screen text-white pt-20">
-      <Box className="border-b border-gray-700 sticky top-16 bg-gray-900 z-10">
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          variant="fullWidth"
-          sx={{
-            "& .MuiTabs-indicator": { backgroundColor: "#8b5cf6", height: 3 },
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: 600,
-              color: "#9ca3af",
-              "&.Mui-selected": { color: "#8b5cf6" },
-            },
-          }}
-        >
-          <Tab label="Overview" />
-        </Tabs>
-      </Box>
+    <div className="min-h-screen bg-semi-dark text-foreground pt-32 pb-20 px-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-4 flex flex-col gap-6"
+          >
+            <div className="glass rounded-3xl p-8 flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-full border-2 border-primary p-1 mb-4">
+                <img
+                  src={`https://api.dicebear.com/7.x/identicon/svg?seed=${reader?.userName}`}
+                  className="w-full h-full rounded-full bg-card"
+                  alt="avatar"
+                />
+              </div>
+              <h2 className="text-2xl font-black tracking-tighter uppercase">
+                {reader?.fullName}
+              </h2>
+              <span className="text-[10px] text-primary font-black tracking-widest uppercase mb-6">
+                Verified Reader
+              </span>
 
-      <Box className="p-6 md:p-12 max-w-7xl mx-auto">
-        {tab === 0 && <OverviewPanel />}
-      </Box>
+              <div className="w-full space-y-4 pt-6 border-t border-border">
+                <div className="flex items-center gap-3 text-foreground/50">
+                  <Mail size={14} />
+                  <span className="text-xs truncate">{reader?.email}</span>
+                </div>
+                <div className="flex items-center gap-3 text-foreground/50">
+                  <Calendar size={14} />
+                  <span className="text-xs">
+                    Joined {new Date(reader?.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button className="w-full py-4 glass rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-foreground transition-all flex items-center justify-center gap-2">
+              <LogOut size={16} /> Logout Session
+            </button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-8"
+          >
+            <div className="flex gap-6 mb-8">
+              {["Saved Visions", "History"].map((label, i) => (
+                <button
+                  key={label}
+                  onClick={() => setTab(i)}
+                  className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all ${
+                    tab === i
+                      ? "text-primary border-b-2 border-primary pb-2"
+                      : "text-foreground/20 hover:text-foreground"
+                  }`}
+                >
+                  {i === 0 ? <Bookmark size={14} /> : <History size={14} />}
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {tab === 0 ? (
+                savedStories.length === 0 ? (
+                  <div className="glass p-12 rounded-3xl border-dashed border-2 border-border flex flex-col items-center justify-center text-center">
+                    <Bookmark size={40} className="text-foreground/10 mb-4" />
+                    <h3 className="text-lg font-bold text-foreground/40 mb-2">
+                      No Saved Visions
+                    </h3>
+                    <p className="text-xs text-foreground/20 max-w-xs">
+                      Explore the archive and bookmark content to see it here
+                      later.
+                    </p>
+                    <button
+                      onClick={() => navigate("/content")}
+                      className="mt-6 text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all"
+                    >
+                      Open Archive <ChevronRight size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {savedStories.map((story) => (
+                      <div
+                        key={story._id}
+                        className="glass p-5 md:p-6 rounded-2xl border border-border flex items-center justify-between group hover:border-primary/50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/content/${story._id}`)}
+                      >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <Bookmark
+                            size={24}
+                            className="text-primary flex-shrink-0"
+                            fill="currentColor"
+                          />
+                          <div className="min-w-0">
+                            <h4 className="font-medium line-clamp-1">
+                              {story.title || "Untitled Vision"}
+                            </h4>
+                            <p className="text-xs text-foreground/60 line-clamp-2 mt-1">
+                              {story.description
+                                ? story.description.substring(0, 90) +
+                                  (story.description.length > 90 ? "..." : "")
+                                : "No description available"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(toggleBookmark(story._id));
+                          }}
+                          className="ml-3 px-3 py-1.5 text-sm font-medium text-red-400 hover:text-red-500 hover:bg-red-950/30 rounded-md transition-colors opacity-80 hover:opacity-100"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-2 text-xs text-foreground/40">
+                      <Clock size={12} />
+                      <span>Recently viewed</span>
+                    </div>
+                    {visitedStories.length > 0 && (
+                      <button
+                        onClick={handleClearHistory}
+                        className="flex items-center gap-2 text-xs text-foreground/40 hover:text-red-400 transition-colors"
+                      >
+                        Clear History
+                      </button>
+                    )}
+                  </div>
+
+                  {visitedStories.length === 0 ? (
+                    <div className="glass p-12 rounded-3xl border-dashed border-2 border-border flex flex-col items-center justify-center text-center">
+                      <History size={40} className="text-foreground/10 mb-4" />
+                      <h3 className="text-lg font-bold text-foreground/40 mb-2">
+                        No Browsing History
+                      </h3>
+                      <p className="text-xs text-foreground/20 max-w-xs">
+                        Articles you read will appear here.
+                      </p>
+                      <button
+                        onClick={() => navigate("/content")}
+                        className="mt-6 text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all"
+                      >
+                        Explore Content <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {visitedStories.map((story) => {
+                        const isBookmarked = bookmarks.includes(story._id);
+
+                        return (
+                          <div
+                            key={story._id}
+                            className="glass p-5 md:p-6 rounded-2xl border border-border flex items-center justify-between group hover:border-primary/50 transition-colors cursor-pointer"
+                            onClick={() => navigate(`/content/${story._id}`)}
+                          >
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                              <div className="flex-shrink-0">
+                                {isBookmarked ? (
+                                  <Bookmark
+                                    size={24}
+                                    className="text-primary"
+                                    fill="currentColor"
+                                  />
+                                ) : (
+                                  <Clock
+                                    size={24}
+                                    className="text-foreground/40"
+                                  />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-medium line-clamp-1">
+                                    {story.title || "Untitled Vision"}
+                                  </h4>
+                                  {isBookmarked && (
+                                    <span className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+                                      Saved
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-foreground/60 line-clamp-2">
+                                  {story.description
+                                    ? story.description.substring(0, 90) +
+                                      (story.description.length > 90
+                                        ? "..."
+                                        : "")
+                                    : "No description available"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(toggleBookmark(story._id));
+                              }}
+                              className="ml-3 px-3 py-1.5 text-sm font-medium text-foreground/60 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                            >
+                              {isBookmarked ? "Unsave" : "Save"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 };

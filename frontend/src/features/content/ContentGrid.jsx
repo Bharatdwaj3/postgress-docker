@@ -1,315 +1,168 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { toggleBookmark } from "../../store/contentSlice";
-import { BookmarkBorder, Bookmark, Person } from '@mui/icons-material';
-import { IconButton, Avatar } from '@mui/material';
-
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+
+
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Card,
-  CardContent,
-  CardMedia,
-  Typography,
-  Chip,
-  Skeleton,
-  Stack,
-} from '@mui/material';
-import {
-  PlayCircleOutline as PlayIcon,
-  Image as ImageIcon,
-  MusicNote as MusicIcon,
-  Schedule as ClockIcon,
-} from '@mui/icons-material';
+import { User, Clock, Tag, ArrowRight, Image as ImageIcon } from 'lucide-react';
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.07 },
-  },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 35 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring', stiffness: 110, damping: 15 },
-  },
-};
-export default function ContentGrid({ 
-  limit = 20, 
-  featuredOnly = false,
-  categoryFilter = null,  // NEW
-  showBookmark = true,     // NEW
-  currentPage = 1,         // NEW
-  itemsPerPage = 16,       // NEW
-}) {
-
-  const dispatch = useDispatch();
-  const bookmarks = useSelector((state) => state.content.bookmarks);
+export default function ContentGrid({ limit = 20, categoryFilter = null }) {
   const [contents, setContents] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios
-      .get('http://localhost:5001/api/content', { withCredentials: true })
+    setLoading(true);
+    axios.get('http://localhost:5001/api/content', { withCredentials: true })
       .then((res) => {
         let data = res.data;
-        data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
         if (categoryFilter && categoryFilter !== 'all') {
           data = data.filter(item => item.category === categoryFilter);
         }
-
-        if (featuredOnly) {
-          data = data.slice(0, limit || 8);
-        } else {
-          const startIdx = (currentPage - 1) * itemsPerPage;
-          const endIdx = startIdx + itemsPerPage;
-          data = data.slice(startIdx, endIdx);
-        }
-
-        setContents(data);
+        setContents(data.slice(0, limit));
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Failed to load contents:', err);
-        setLoading(false);
-      });
-  }, [featuredOnly, limit, categoryFilter, currentPage, itemsPerPage]);
+      }).catch(() => setLoading(false));
+  }, [limit, categoryFilter]);
 
-  const isBookmarked = (contentId) => bookmarks.includes(contentId);
-
-  const getMediaIcon = (mediaType) => {
-    switch (mediaType?.toLowerCase()) {
-      case 'video': return <PlayIcon fontSize="small" />;
-      case 'image': return <ImageIcon fontSize="small" />;
-      case 'audio': return <MusicIcon fontSize="small" />;
-      default: return <ClockIcon fontSize="small" />;
-    }
-  };
-
-   const handleBookmarkToggle = (e, contentId) => {
-    e.stopPropagation();
-    dispatch(toggleBookmark(contentId));
+  
+  const calculateReadTime = (description) => {
+    if (!description) return '3 min';
+    const words = description.split(' ').length;
+    const minutes = Math.ceil(words / 200);
+    return `${minutes} min`;
   };
 
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
-  if (loading) {
-    return (
-      <Box sx={{ padding: '24px 40px' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '24px',
-        }}>
-          {[...Array(16)].map((_, i) => (
-            <Skeleton 
-              key={i} 
-              variant="rectangular" 
-              width="100%" 
-              height={340} 
-              sx={{ borderRadius: 3 }} 
-            />
-          ))}
-        </div>
-      </Box>
-    );
-  }
-
-  if (contents.length === 0) {
-    return (
-      <Box sx={{ py: 10, textAlign: 'center', color: 'text.secondary' }}>
-        <Typography variant="h5" gutterBottom>
-          No content available yet
-        </Typography>
-        <Typography color="text.secondary">
-          Create your first content to see it here!
-        </Typography>
-      </Box>
-    );
-  }
+  if (loading) return (
+    <div className="w-full max-w-[1400px] mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="content-card h-[400px] animate-pulse">
+            <div className="aspect-[16/10] bg-foreground/5 rounded-t-xl" />
+            <div className="p-5 space-y-3">
+              <div className="h-3 bg-foreground/5 rounded w-1/3" />
+              <div className="h-6 bg-foreground/5 rounded w-full" />
+              <div className="h-4 bg-foreground/5 rounded w-4/5" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <Box sx={{ padding: '30px 40px 24px 40px' }}>
-      <motion.div variants={container} initial="hidden" animate="show">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '24px',
-        }}>
-          {contents.map((content) => (
-            <motion.div key={content._id} variants={item}>
-              <Card
-                onClick={() => navigate(`/content/${content._id}`)}
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  transition: 'all 0.35s ease',
-                  backgroundColor: 'background.paper',
-                  boxShadow: 3,
-                  '&:hover': {
-                    transform: 'translateY(-10px)',
-                    boxShadow: 12,
-                  },
-                  cursor: 'pointer',
-                }}
-              >
+    <div className="w-full max-w-[1400px] mx-auto">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr"
+      >
+        {contents.map((content, index) => (
+          <motion.article 
+            key={content._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            whileHover={{ y: -4 }}
+            className="content-card group cursor-pointer flex flex-col h-full"
+            onClick={() => navigate(`/content/${content._id}`)}
+          >
+         \
+            <div className="relative aspect-[16/10] bg-foreground/5 overflow-hidden rounded-t-xl flex-shrink-0">
+              {content.mediaUrl && content.mediaType === 'image' ? (
+                <img 
+                  src={content.mediaUrl} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                  alt={content.title}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/10 to-accent/10">
+                  <ImageIcon size={48} className="text-foreground/20" strokeWidth={1.5} />
+                </div>
+              )}
+              
+        
+              {content.category && (
+                <div className="absolute top-3 left-3">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/95 backdrop-blur-sm border border-border text-xs font-semibold text-foreground/70">
+                    <Tag size={11} />
+                    {content.category}
+                  </span>
+                </div>
+              )}
+            </div>
 
-{showBookmark && (
-                  <IconButton
-                    onClick={(e) => handleBookmarkToggle(e, content._id)}
-                    sx={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 12,
-                      zIndex: 2,
-                      backgroundColor: 'rgba(0,0,0,0.6)',
-                      backdropFilter: 'blur(8px)',
-                      color: isBookmarked(content._id) ? '#f5a623' : 'white',
-                      '&:hover': {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        transform: 'scale(1.1)',
-                      },
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {isBookmarked(content._id) ? <Bookmark /> : <BookmarkBorder />}
-                  </IconButton>
-                )}
+          
+            <div className="p-5 flex flex-col flex-grow">
+             
+              <h3 className="text-lg font-bold leading-snug text-foreground mb-2.5 line-clamp-2 group-hover:text-primary transition-colors">
+                {content.title || 'Untitled Story'}
+              </h3>
 
+             
+              <p className="text-sm text-foreground/60 leading-relaxed mb-4 line-clamp-2 flex-grow">
+                {content.description || "Discover this story and explore new perspectives..."}
+              </p>
 
+              
+              <div className="mt-auto space-y-3">
+                <div className="pt-3 border-t border-border flex items-center justify-between">
+                 
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center ring-2 ring-background flex-shrink-0">
+                      {content.author?.avatar ? (
+                        <img 
+                          src={content.author.avatar} 
+                          alt={content.author.fullName || content.author.userName}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <User size={12} className="text-primary" />
+                      )}
+                    </div>
+                    <span className="text-xs font-medium text-foreground/70 truncate">
+                      {content.author?.fullName || content.author?.userName || 'Anonymous'}
+                    </span>
+                  </div>
 
-                <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
-                  {content.mediaUrl && content.mediaType?.toLowerCase() === 'image' ? (
-                    <CardMedia
-                      component="img"
-                      image={content.mediaUrl}
-                      alt={content.title}
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        transition: 'transform 0.8s ease',
-                        '&:hover': { transform: 'scale(1.08)' },
-                      }}
-                      onError={(e) => (e.target.src = '/image/content-placeholder.jpg')}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        inset: 0,
-                        bgcolor: 'grey.900',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'grey.500',
-                      }}
-                    >
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        {getMediaIcon(content.mediaType)}
-                        <Typography variant="subtitle2">
-                          {content.mediaType || 'Media'}
-                        </Typography>
-                      </Stack>
-                    </Box>
-                  )}
-
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      background:
-                        'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
-                    }}
+                  
+                  <ArrowRight 
+                    size={16} 
+                    className="text-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" 
                   />
-                </Box>
+                </div>
 
-                <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight={600}
-                    sx={{
-                      mb: 1.5,
-                      lineHeight: 1.3,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      '&:hover': { color: 'primary.main' },
-                    }}
-                  >
-                    {content.title || 'Untitled Content'}
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      mb: 2,
-                      flexGrow: 1,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {content.description || 'No description available'}
-                  </Typography>
-
-
-                   {content.author && (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-      <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.main' }}>
-        <Person fontSize="small" />
-      </Avatar>
-      <Typography variant="caption" color="text.secondary">
-        {content.author.fullName || content.author.userName || 'Anonymous'}
-      </Typography>
-    </Box>
-  )}
-
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    flexWrap="wrap"
-                    gap={1}
-                    mt="auto"
-                  >
-                    <Chip
-                      label={content.category || 'Uncategorized'}
-                      size="small"
-                      sx={{ textTransform: 'capitalize' }}
-                    />
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                      {getMediaIcon(content.mediaType)}
-                      <Typography variant="caption" color="text.secondary">
-                        {content.mediaType || 'unknown'}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+              
+                <div className="flex items-center gap-3 text-xs text-foreground/40">
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={11} />
+                    <span>{calculateReadTime(content.description)} read</span>
+                  </div>
+                  {content.createdAt && (
+                    <>
+                      <div className="w-1 h-1 rounded-full bg-foreground/20" />
+                      <span>{formatDate(content.createdAt)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.article>
+        ))}
       </motion.div>
-    </Box>
+    </div>
   );
 }

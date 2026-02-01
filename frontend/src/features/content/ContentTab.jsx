@@ -1,774 +1,245 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  Box,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Typography,
-  CircularProgress,
-  InputLabel,
-  MenuItem,
-  Select,
-  FormControl,
-  Snackbar,
-  Alert,
-  TextareaAutosize,
-  Pagination,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
-  Chip,
-  Tooltip,
-  Menu,
-  MenuItem as MuiMenuItem,
-} from "@mui/material";
-import {
-  Add,
-  Edit,
-  Delete,
-  CloudUpload,
-  Search,
-  MoreVert,
-  PlayCircleOutline,
-  Image as ImageIcon,
-  MusicNote,
-  CalendarToday,
-} from "@mui/icons-material";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Edit, Trash2, Search, X, MoreVertical, Eye, TrendingUp } from "lucide-react";
 
-const API_BASE = "http://localhost:5001/api/content";
-
-const CATEGORIES = ["fiction", "science", "art", "daily", "history"];
-const MEDIA_TYPES = ["video", "image", "audio"];
-
-const ContentTab = () => {
+const ContentTab = ({user, writer}) => {
   const [contents, setContents] = useState([]);
-  const [filteredContents, setFilteredContents] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [page, setPage] = useState(1);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedContent, setSelectedContent] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const itemsPerPage = 12;
+    
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "",
-    mediaType: "",
-  });
-
-  const [mediaFile, setMediaFile] = useState(null);
-  const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
-
-  const fetchContents = useCallback(async () => {
+  const fetchContent = async () => {
     try {
-      setLoading(true);
-      const { data } = await axios.get(API_BASE, { withCredentials: true });
-      const sorted = data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      setContents(sorted);
-      setFilteredContents(sorted);
-    } catch (err) {
-      console.error("Load error:", err);
-      showToast("Failed to load content", "error");
-    } finally {
+      const res = await axios.get("http://localhost:5001/api/content", { withCredentials: true });
+      const currentUser = writer || user;
+      const userContent = res.data.filter(item => 
+        item?.userId?._id === currentUser?.id || item?.userId?._id === currentUser?._id
+      );
+      setContents(userContent);
       setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchContents();
-  }, [fetchContents]);
-
-  useEffect(() => {
-    const lowerTerm = searchTerm.toLowerCase();
-    const filtered = contents.filter(
-      (item) =>
-        item.title?.toLowerCase().includes(lowerTerm) ||
-        item.description?.toLowerCase().includes(lowerTerm) ||
-        item.category?.toLowerCase().includes(lowerTerm)
-    );
-    setFilteredContents(filtered);
-    setPage(1);
-  }, [searchTerm, contents]);
-
-  const paginatedContents = useMemo(() => {
-    const startIdx = (page - 1) * itemsPerPage;
-    return filteredContents.slice(startIdx, startIdx + itemsPerPage);
-  }, [filteredContents, page, itemsPerPage]);
-
-  const totalPages = Math.ceil(filteredContents.length / itemsPerPage);
-
-  const showToast = (message, severity = "success") => {
-    setToast({ open: true, message, severity });
-  };
-
-  const handleOpen = (item = null) => {
-    setEditingItem(item);
-    setForm(
-      item
-        ? {
-            title: item.title || "",
-            description: item.description || "",
-            category: item.category || "",
-            mediaType: item.mediaType || "",
-          }
-        : { title: "", description: "", category: "", mediaType: "" }
-    );
-    setMediaFile(null);
-    setOpenDialog(true);
-  };
-
-  const handleClose = () => {
-    setOpenDialog(false);
-    setEditingItem(null);
-    setMediaFile(null);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files?.[0]) {
-      setMediaFile(e.target.files[0]);
+    } catch (err) { 
+      console.log(err);
+      setLoading(false); 
     }
   };
 
-  const isFormValid = () => {
-    return form.title.trim() && form.description.trim() && form.category && form.mediaType;
-  };
-
-  const handleSave = async () => {
-    if (!isFormValid()) {
-      showToast("Please fill all required fields", "warning");
-      return;
+  useEffect(() => { 
+    if (user || writer) {
+      fetchContent(); 
     }
+  }, [user, writer, fetchContent]);
 
-    setSaving(true);
-
-    try {
-      const payload = new FormData();
-      payload.append("title", form.title.trim());
-      payload.append("description", form.description.trim());
-      payload.append("category", form.category);
-      payload.append("mediaType", form.mediaType);
-
-      if (mediaFile) {
-        payload.append("media", mediaFile);
-      }
-
-      const config = {
-        withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
-      };
-
-      if (editingItem) {
-        await axios.put(`${API_BASE}/${editingItem._id}`, payload, config);
-        showToast("Content updated successfully");
-      } else {
-        await axios.post(API_BASE, payload, config);
-        showToast("Content created successfully");
-      }
-
-      await fetchContents();
-      handleClose();
-    } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Failed to save content";
-      showToast(msg, "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    handleMenuClose();
-    if (!window.confirm("Delete this content permanently?")) return;
-
-    try {
-      await axios.delete(`${API_BASE}/${id}`, { withCredentials: true });
-      setContents((prev) => prev.filter((c) => c._id !== id));
-      showToast("Content deleted", "success");
-    } catch (err) {
-      showToast("Failed to delete content", "error");
-    }
-  };
-
-  const handleMenuOpen = (event, content) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedContent(content);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedContent(null);
-  };
-
-  const getMediaIcon = (mediaType) => {
-    switch (mediaType?.toLowerCase()) {
-      case "video":
-        return <PlayCircleOutline sx={{ fontSize: 40, color: "#8b5cf6" }} />;
-      case "image":
-        return <ImageIcon sx={{ fontSize: 40, color: "#8b5cf6" }} />;
-      case "audio":
-        return <MusicNote sx={{ fontSize: 40, color: "#8b5cf6" }} />;
-      default:
-        return <ImageIcon sx={{ fontSize: 40, color: "#8b5cf6" }} />;
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+  const filteredContents = contents.filter(item => 
+    item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <CircularProgress sx={{ color: "#8b5cf6" }} />
-      </Box>
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-20 bg-card border border-border rounded-xl animate-pulse" />
+        ))}
+      </div>
     );
   }
 
   return (
-    <Box className="min-h-screen" sx={{ bgcolor: "transparent", p: { xs: 2, md: 4 } }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 2,
-            mb: 3,
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: 700, color: "white" }}>
-            Your Content
-            {contents.length > 0 && (
-              <Chip
-                label={contents.length}
-                size="small"
-                sx={{
-                  ml: 2,
-                  bgcolor: "#8b5cf6",
-                  color: "white",
-                  fontWeight: 600,
-                }}
-              />
-            )}
-          </Typography>
-
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => handleOpen()}
-            sx={{
-              bgcolor: "#8b5cf6",
-              "&:hover": { bgcolor: "#7c3aed" },
-              px: 3,
-              py: 1.2,
-              fontWeight: 600,
-            }}
-          >
-            Create New Content
-          </Button>
-        </Box>
-
-        {/* Search Bar */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Search sx={{ color: "#9ca3af" }} />
-          <TextField
-            placeholder="Search by title, description, or category..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            fullWidth
-            variant="outlined"
-            sx={{
-              bgcolor: "rgba(31, 41, 55, 0.8)",
-              borderRadius: 2,
-              "& .MuiOutlinedInput-root": {
-                color: "white",
-                "& fieldset": { borderColor: "#374151" },
-                "&:hover fieldset": { borderColor: "#8b5cf6" },
-                "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-              },
-            }}
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <div className="relative w-full sm:w-96 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" size={18} />
+          <input 
+            type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search your stories..." 
+            className="w-full bg-card border border-border rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
-        </Box>
-      </Box>
-
-      {/* Content Grid */}
-      {paginatedContents.length === 0 ? (
-        <Box
-          sx={{
-            textAlign: "center",
-            py: 12,
-            px: 4,
-            borderRadius: 4,
-            bgcolor: "rgba(31, 41, 55, 0.5)",
-          }}
-        >
-          <Typography variant="h6" sx={{ color: "#9ca3af", mb: 2 }}>
-            {searchTerm ? "No matching content found" : "No content created yet"}
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#6b7280" }}>
-            {!searchTerm && "Create your first content to get started!"}
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: "repeat(3, 1fr)",
-                lg: "repeat(4, 1fr)",
-              },
-              gap: 3,
-              mb: 4,
-            }}
-          >
-            {paginatedContents.map((content, idx) => (
-              <motion.div
-                key={content._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05, duration: 0.3 }}
-              >
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    bgcolor: "rgba(31, 41, 55, 0.8)",
-                    border: "1px solid #374151",
-                    borderRadius: 3,
-                    overflow: "hidden",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      transform: "translateY(-8px)",
-                      boxShadow: "0 20px 40px rgba(139, 92, 246, 0.3)",
-                      borderColor: "#8b5cf6",
-                    },
-                  }}
-                >
-                  {/* Card Header - Media */}
-                  <Box sx={{ position: "relative", paddingTop: "56.25%" }}>
-                    {content.mediaUrl && content.mediaType === "image" ? (
-                      <CardMedia
-                        component="img"
-                        image={content.mediaUrl}
-                        alt={content.title}
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: "100%",
-                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {getMediaIcon(content.mediaType)}
-                      </Box>
-                    )}
-
-                    {/* Actions Menu Button */}
-                    <IconButton
-                      onClick={(e) => handleMenuOpen(e, content)}
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        bgcolor: "rgba(0,0,0,0.7)",
-                        backdropFilter: "blur(8px)",
-                        color: "white",
-                        "&:hover": {
-                          bgcolor: "rgba(0,0,0,0.9)",
-                        },
-                      }}
-                    >
-                      <MoreVert />
-                    </IconButton>
-                  </Box>
-
-                  {/* Card Content */}
-                  <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 600,
-                        color: "white",
-                        mb: 1.5,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {content.title || "Untitled"}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#9ca3af",
-                        mb: 2,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {content.description || "No description"}
-                    </Typography>
-
-                    {/* Category & Media Type */}
-                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
-                      <Chip
-                        label={content.category || "Uncategorized"}
-                        size="small"
-                        sx={{
-                          bgcolor: "#8b5cf6",
-                          color: "white",
-                          textTransform: "capitalize",
-                          fontWeight: 500,
-                        }}
-                      />
-                      <Chip
-                        label={content.mediaType || "unknown"}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          borderColor: "#6b7280",
-                          color: "#9ca3af",
-                          textTransform: "capitalize",
-                        }}
-                      />
-                    </Box>
-
-                    {/* Date */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <CalendarToday sx={{ fontSize: 14, color: "#6b7280" }} />
-                      <Typography variant="caption" sx={{ color: "#6b7280" }}>
-                        {formatDate(content.createdAt)}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </Box>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(e, value) => setPage(value)}
-                size="large"
-                sx={{
-                  "& .MuiPaginationItem-root": {
-                    color: "#9ca3af",
-                    borderColor: "#374151",
-                    "&:hover": {
-                      bgcolor: "rgba(139, 92, 246, 0.1)",
-                      borderColor: "#8b5cf6",
-                    },
-                  },
-                  "& .Mui-selected": {
-                    bgcolor: "#8b5cf6 !important",
-                    color: "white !important",
-                    borderColor: "#8b5cf6",
-                  },
-                }}
-              />
-            </Box>
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 hover:text-foreground"
+            >
+              <X size={18} />
+            </button>
           )}
-        </>
+        </div>
+
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="w-full sm:w-auto px-6 py-3 bg-primary text-white rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 transition-all font-semibold text-sm shadow-lg shadow-primary/20"
+        >
+          <Plus size={18} /> New Story
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Total Stories</p>
+            <Eye size={16} className="text-primary" />
+          </div>
+          <p className="text-2xl font-bold">{contents.length}</p>
+        </div>
+        
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Published</p>
+            <TrendingUp size={16} className="text-secondary" />
+          </div>
+          <p className="text-2xl font-bold">{contents.filter(c => c.status !== 'draft').length}</p>
+        </div>
+        
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Drafts</p>
+            <Edit size={16} className="text-accent" />
+          </div>
+          <p className="text-2xl font-bold">{contents.filter(c => c.status === 'draft').length || 0}</p>
+        </div>
+      </div>
+
+      {filteredContents.length === 0 ? (
+        <div className="bg-card border border-border rounded-2xl p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-foreground/5 flex items-center justify-center mx-auto mb-4">
+            <Search size={32} className="text-foreground/20" />
+          </div>
+          <h3 className="text-lg font-bold mb-2">
+            {searchQuery ? 'No stories found' : 'No stories yet'}
+          </h3>
+          <p className="text-foreground/50 text-sm mb-6">
+            {searchQuery ? 'Try a different search term' : 'Create your first story to get started'}
+          </p>
+          {!searchQuery && (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-semibold text-sm"
+            >
+              Create Your First Story
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-foreground/[0.02] border-b border-border">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground/50 uppercase tracking-wider">Story</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground/50 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground/50 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground/50 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-foreground/50 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredContents.map((item) => (
+                  <tr key={item._id} className="hover:bg-foreground/[0.02] transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-12 rounded-lg bg-foreground/5 overflow-hidden flex-shrink-0">
+                          {item.mediaUrl ? (
+                            <img src={item.mediaUrl} className="w-full h-full object-cover" alt="" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-primary/10 to-secondary/10" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground truncate">{item.title}</p>
+                          <p className="text-sm text-foreground/50 truncate">{item.description?.substring(0, 50)}...</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary/10 text-secondary">
+                        {item.category || 'Uncategorized'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                        Published
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-foreground/60">
+                      {new Date(item.createdAt).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="p-2 hover:bg-foreground/5 rounded-lg transition-colors text-foreground/60 hover:text-primary">
+                          <Edit size={16} />
+                        </button>
+                        <button className="p-2 hover:bg-foreground/5 rounded-lg transition-colors text-foreground/60 hover:text-primary">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="md:hidden divide-y divide-border">
+            {filteredContents.map((item) => (
+              <div key={item._id} className="p-4 hover:bg-foreground/[0.02] transition-colors">
+                <div className="flex gap-3">
+                  <div className="w-20 h-16 rounded-lg bg-foreground/5 overflow-hidden flex-shrink-0">
+                    {item.mediaUrl ? (
+                      <img src={item.mediaUrl} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/10 to-secondary/10" />
+                    )}
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <h3 className="font-semibold text-foreground mb-1 truncate">{item.title}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary">
+                        {item.category}
+                      </span>
+                      <span className="text-xs text-foreground/40">
+                        {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="p-1.5 hover:bg-foreground/5 rounded transition-colors text-foreground/60">
+                        <Edit size={14} />
+                      </button>
+                      <button className="p-1.5 hover:bg-foreground/5 rounded transition-colors text-foreground/60">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* Context Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            bgcolor: "#1f2937",
-            border: "1px solid #374151",
-            "& .MuiMenuItem-root": {
-              color: "white",
-              "&:hover": {
-                bgcolor: "rgba(139, 92, 246, 0.1)",
-              },
-            },
-          },
-        }}
-      >
-        <MuiMenuItem
-          onClick={() => {
-            handleMenuClose();
-            handleOpen(selectedContent);
-          }}
-        >
-          <Edit sx={{ mr: 1, fontSize: 20 }} />
-          Edit
-        </MuiMenuItem>
-        <MuiMenuItem
-          onClick={() => handleDelete(selectedContent?._id)}
-          sx={{ color: "#ef4444 !important" }}
-        >
-          <Delete sx={{ mr: 1, fontSize: 20 }} />
-          Delete
-        </MuiMenuItem>
-      </Menu>
-
-      {/* Create/Edit Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={handleClose}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: "#1f2937",
-            color: "white",
-            border: "1px solid #374151",
-          },
-        }}
-      >
-        <DialogTitle sx={{ bgcolor: "#111827", borderBottom: "1px solid #374151" }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            {editingItem ? "Edit Content" : "Create New Content"}
-          </Typography>
-        </DialogTitle>
-
-        <DialogContent sx={{ bgcolor: "#1f2937", pt: 3 }}>
-          <Box sx={{ display: "grid", gap: 3 }}>
-            <TextField
-              name="title"
-              label="Title *"
-              value={form.title}
-              onChange={handleChange}
-              fullWidth
-              required
-              InputLabelProps={{ sx: { color: "#9ca3af" } }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  color: "white",
-                  "& fieldset": { borderColor: "#374151" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                },
-              }}
-            />
-
-            <FormControl fullWidth required>
-              <InputLabel sx={{ color: "#9ca3af" }}>Category *</InputLabel>
-              <Select
-                name="category"
-                value={form.category}
-                label="Category *"
-                onChange={handleChange}
-                sx={{
-                  color: "white",
-                  "& fieldset": { borderColor: "#374151" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  "& .MuiSvgIcon-root": { color: "#9ca3af" },
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      bgcolor: "#1f2937",
-                      "& .MuiMenuItem-root": {
-                        color: "white",
-                        "&:hover": { bgcolor: "rgba(139, 92, 246, 0.1)" },
-                      },
-                    },
-                  },
-                }}
-              >
-                {CATEGORIES.map((cat) => (
-                  <MenuItem key={cat} value={cat}>
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth required>
-              <InputLabel sx={{ color: "#9ca3af" }}>Media Type *</InputLabel>
-              <Select
-                name="mediaType"
-                value={form.mediaType}
-                label="Media Type *"
-                onChange={handleChange}
-                sx={{
-                  color: "white",
-                  "& fieldset": { borderColor: "#374151" },
-                  "&:hover fieldset": { borderColor: "#8b5cf6" },
-                  "&.Mui-focused fieldset": { borderColor: "#8b5cf6" },
-                  "& .MuiSvgIcon-root": { color: "#9ca3af" },
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      bgcolor: "#1f2937",
-                      "& .MuiMenuItem-root": {
-                        color: "white",
-                        "&:hover": { bgcolor: "rgba(139, 92, 246, 0.1)" },
-                      },
-                    },
-                  },
-                }}
-              >
-                {MEDIA_TYPES.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <Box>
-              <InputLabel sx={{ color: "#9ca3af", mb: 1 }}>Description *</InputLabel>
-              <TextareaAutosize
-                name="description"
-                minRows={4}
-                value={form.description}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  fontFamily: "inherit",
-                  fontSize: "14px",
-                  borderRadius: "8px",
-                  border: "1px solid #374151",
-                  background: "#111827",
-                  color: "white",
-                  resize: "vertical",
-                }}
-                required
-              />
-            </Box>
-
-            <Box>
-              <InputLabel sx={{ color: "#9ca3af", mb: 1 }}>
-                Media File {editingItem && !mediaFile && "(leave empty to keep existing)"}
-              </InputLabel>
-              <Button
-                component="label"
-                variant="outlined"
-                startIcon={<CloudUpload />}
-                sx={{
-                  justifyContent: "flex-start",
-                  color: "white",
-                  borderColor: "#374151",
-                  "&:hover": {
-                    borderColor: "#8b5cf6",
-                    bgcolor: "rgba(139, 92, 246, 0.1)",
-                  },
-                }}
-                fullWidth
-              >
-                {mediaFile ? mediaFile.name : "Upload Media (video/image/audio)"}
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*,video/*,audio/*"
-                  onChange={handleFileChange}
-                />
-              </Button>
-              {mediaFile && (
-                <Typography variant="caption" sx={{ mt: 1, display: "block", color: "#6b7280" }}>
-                  {(mediaFile.size / 1024 / 1024).toFixed(2)} MB
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ bgcolor: "#111827", borderTop: "1px solid #374151", p: 2 }}>
-          <Button onClick={handleClose} disabled={saving} sx={{ color: "#9ca3af" }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={saving || !isFormValid()}
-            startIcon={saving ? <CircularProgress size={20} /> : null}
-            sx={{
-              bgcolor: "#8b5cf6",
-              "&:hover": { bgcolor: "#7c3aed" },
-              "&:disabled": { bgcolor: "#374151", color: "#6b7280" },
-            }}
-          >
-            {saving ? "Saving..." : editingItem ? "Update" : "Create"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Toast Notification */}
-      <Snackbar
-        open={toast.open}
-        autoHideDuration={5000}
-        onClose={() => setToast({ ...toast, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={toast.severity}
-          variant="filled"
-          onClose={() => setToast({ ...toast, open: false })}
-          sx={{
-            bgcolor: toast.severity === "success" ? "#8b5cf6" : undefined,
-          }}
-        >
-          {toast.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Create New Story</h3>
+            <p className="text-foreground/60 text-sm">Form implementation goes here...</p>
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="mt-4 w-full px-4 py-2 bg-foreground/5 rounded-lg hover:bg-foreground/10 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

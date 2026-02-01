@@ -1,6 +1,6 @@
-const jwt=require('jsonwebtoken');
-const User=require('../models/user.model');
-const { JWT_ACC_SECRECT, JWT_ACC_EXPIRES_IN, JWT_REF_SECRECT, JWT_REF_EXPIRES_IN } = require('../config/env.config');
+import jwt from 'jsonwebtoken';
+//import User from '../models/user.model';
+import { JWT_ACC_SECRECT, JWT_ACC_EXPIRES_IN, JWT_REF_SECRECT, JWT_REF_EXPIRES_IN } from '../config/env.config';
 
 
 const cookieOpts=(maxAge, path='/')=>({

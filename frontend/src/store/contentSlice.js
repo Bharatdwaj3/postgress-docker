@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   bookmarks: JSON.parse(localStorage.getItem('bookmarks') || '[]'),
+  visitedArticles: JSON.parse(localStorage.getItem('visitedArticles') || '[]'),
   selectedCategory: 'all',
   searchQuery: '',
 };
@@ -23,6 +24,20 @@ const contentSlice = createSlice({
       localStorage.setItem('bookmarks', JSON.stringify(state.bookmarks));
     },
     
+      markAsVisited: (state, action) => {
+      const contentId = action.payload;
+      
+      if (!state.visitedArticles.includes(contentId)) {
+        state.visitedArticles.unshift(contentId);
+        localStorage.setItem('visitedArticles', JSON.stringify(state.visitedArticles));
+      }
+    },
+
+    clearHistory: (state) => {
+      state.visitedArticles = [];
+      localStorage.removeItem('visitedArticles');
+    },
+
     setCategory: (state, action) => {
       state.selectedCategory = action.payload;
     },
@@ -38,5 +53,15 @@ const contentSlice = createSlice({
   },
 });
 
-export const { toggleBookmark, setCategory, setSearchQuery, clearBookmarks } = contentSlice.actions;
+export const { 
+  markAsVisited,
+  clearHistory,
+
+  toggleBookmark, 
+  setCategory, 
+  setSearchQuery, 
+  clearBookmarks 
+} = contentSlice.actions;
+
+
 export default contentSlice.reducer;

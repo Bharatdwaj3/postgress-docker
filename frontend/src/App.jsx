@@ -1,5 +1,5 @@
 
-import {Home} from "./pages/index";
+import {Home, Explore, NewStory} from "./pages/index";
 import {Login, Signup} from "./auth/index";
 import {Navbar} from "./components/index";
 
@@ -23,12 +23,14 @@ function App() {
               <Route path="/signup" element={<Signup/>}/>
 
               <Route path="/content" element={<ContentGrid/>}/>
+              <Route path="/my-stories" element={<ContentGrid />} />
               <Route path="/content/:id" element={<ContentDetails/>}/>
               <Route path="/content/crud" element={<ContentTab/>}/>
-              <Route path="/explore" element={<ContentGrid/>}/>
+              <Route path="/explore" element={<Explore />} />
 
               <Route path="/reader" element={<ReaderProfile />} />
               <Route path="/writer" element={<WriterProfile />} />
+              <Route path="/writer/new" element={<NewStory />} />
               
             
           </Routes>

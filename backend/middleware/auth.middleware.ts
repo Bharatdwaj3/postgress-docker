@@ -1,9 +1,11 @@
 import jwt from "jsonwebtoken";
-//import User  from '../models/user.model.js';
-import { JWT_ACC_SECRECT } from "../config/env.config.js";
-import type { Request, Response, NextFunction } from "express";
+import { JWT_ACC_SECRECT } from "../config/env.config.ts";
 
-import express from "express";
+import express from 'express';
+
+type Request = express.Request;
+type Response = express.Response;
+type NextFunction = express.NextFunction;
 
 
 export const authUser = async (req: Request, res: Response, next: NextFunction) => {
