@@ -1,8 +1,8 @@
 # Slim Alpine base with Java 21 JRE (Eclipse Temurin)
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin
 
 # Install Node.js 20, npm, and curl (Alpine package manager: apk)
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     curl \

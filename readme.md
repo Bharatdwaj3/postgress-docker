@@ -15,5 +15,3 @@
     - Docker: Containerization
     - Git: Version Control
     - Nginx: Serving the static pages
-
-
