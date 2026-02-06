@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 
-FROM nginx:slim
+FROM nginx:stable-alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
