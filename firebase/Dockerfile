@@ -1,6 +1,9 @@
 # Use Node.js image directly - no apt-get needed
 FROM node:20-alpine
 
+# Install Java runtime (required for Auth & Storage emulators)
+RUN apk add --no-cache openjdk21-jre
+
 # Install firebase-tools
 RUN npm install -g firebase-tools@latest
 
@@ -8,7 +11,7 @@ RUN npm install -g firebase-tools@latest
 WORKDIR /app
 
 # Copy firebase configuration files
-COPY firebase.json .firebaserc ./
+COPY firebase.json .firebaserc storage.rules ./
 
 # Create data directory
 RUN mkdir -p firebase-data

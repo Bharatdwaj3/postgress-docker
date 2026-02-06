@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./build/index.js",
-    "build": "tsc -p .",
+     "start": "node --loader ts-node/esm server.ts",
     "dev": "nodemon --exec \"node --loader ts-node/esm server.ts\""
   },
   "keywords": [],

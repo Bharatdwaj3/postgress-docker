@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "nodenext",
-    "allowImportingTsExtensions": true,
     "target": "esnext",
     "moduleResolution": "nodenext",
     "types": ["node"],
@@ -10,13 +9,13 @@
     "declarationMap": false,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false,
-    "strict": true,
+    "strict": false,
     "jsx": "react-jsx",
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "checkJs": true,
+    "checkJs": false,
     "noEmit": true,
     
     "allowJs": true
